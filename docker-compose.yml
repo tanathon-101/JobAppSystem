@@ -11,6 +11,24 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "p@ssw0rd"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - ~/sqlserver_data:/var/opt/mssql
+    restart: always
 
   job-api:
     build:
@@ -20,11 +38,15 @@ services:
       - "5001:80"
     depends_on:
       - rabbitmq
+      - sqlserver
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
     restart: always
 
   job-consumer:
     build:
-      context: ../job-application-consumer-go  # 👈 ชี้ย้อนขึ้นไปอีกโฟลเดอร์นอก
+      context: ../job-application-consumer-go
     container_name: job-consumer
     depends_on:
       - rabbitmq
