@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  job-api:
+    build:
+      context: ../JobApplicationTrackerAPI     
+    container_name: job-api
+    ports:
+      - "5001:80"
+    depends_on:
+      - rabbitmq
+    restart: always
+
+  job-consumer:
+    build:
+      context: ../job-application-consumer-go  # 👈 ชี้ย้อนขึ้นไปอีกโฟลเดอร์นอก
+    container_name: job-consumer
+    depends_on:
+      - rabbitmq
+    restart: always
